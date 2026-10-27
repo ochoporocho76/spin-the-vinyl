@@ -1,0 +1,641 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#4a1420">
+<meta name="description" content="Spin The Vinyl: vidrieras de discos de vendedores de Argentina">
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icon-192.png" type="image/png">
+<link rel="apple-touch-icon" href="icon-512.png">
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;500;700&display=swap" rel="stylesheet">
+<title>Spin The Vinyl</title>
+<style>
+[hidden]{display:none!important}
+:root{--p1:#e8607a;--p2:#ffb38a;--p3:#ffd6b8;--p4:#8c2a3d;--p5:#ffc9a0;--bg:#4a1420;--card:#5c1b2a;--fg:#fff3ec;--muted:#e8b9b5;--line:#6e2a3a;--radius:14px}
+*{box-sizing:border-box}
+body{margin:0;min-height:100vh;font-family:Montserrat,system-ui,sans-serif;color:var(--fg);background:radial-gradient(circle at 15% 0%,#7a2a40 0%,transparent 40%),radial-gradient(circle at 90% 10%,#5c1b2a 0%,transparent 35%),var(--bg);padding:env(safe-area-inset-top,0px) 0 env(safe-area-inset-bottom,0px)}
+header{text-align:center;padding:16px 16px 4px}
+.logo{width:150px;height:150px;display:block;margin:0 auto;border-radius:26px}
+.tabs{position:sticky;top:0;z-index:5;display:flex;gap:6px;background:var(--bg);padding:10px 12px;border-bottom:1px solid var(--line)}
+.tab{flex:1;background:transparent;border:1px solid var(--line);color:var(--muted);padding:10px 4px;border-radius:999px;font:inherit;font-weight:500;font-size:.75rem;letter-spacing:1px;text-transform:uppercase;cursor:pointer}
+.tab.on{background:linear-gradient(90deg,var(--p1),var(--p2));color:#2a0b14;border-color:transparent;font-weight:700}
+main{max-width:1100px;margin:0 auto;padding:14px}
+.view{display:none}.view.on{display:block}
+.panel{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:16px;margin-bottom:16px}
+h2{font-weight:300;font-size:1rem;letter-spacing:4px;text-transform:uppercase;color:var(--p3);margin:0 0 12px}
+.search{width:100%;padding:12px 16px;border-radius:999px;border:1px solid var(--line);background:#3a1019;color:var(--fg);font:inherit;font-size:1rem;margin-bottom:10px}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:10px;margin-bottom:10px}
+label{font-size:.75rem;color:var(--muted);display:flex;flex-direction:column;gap:4px}
+input,select{background:#3a1019;color:var(--fg);border:1px solid var(--line);border-radius:10px;padding:10px;font:inherit;font-size:.95rem;width:100%}
+input:focus,select:focus{outline:2px solid var(--p2);border-color:transparent}
+.fileBox{display:flex;flex-direction:column;gap:6px;border:1px dashed var(--p2);border-radius:12px;padding:12px;font-size:.78rem;color:var(--muted)}
+.fileBox span{color:var(--p3);font-weight:500}
+.fileBox input[type=file]{font-size:.75rem;padding:6px;color:var(--muted)}
+.fileBox small{color:var(--p5)}
+button{font:inherit;font-weight:600;border:0;border-radius:12px;padding:12px 18px;color:#2a0b14;background:linear-gradient(90deg,var(--p1),var(--p2));cursor:pointer;font-size:.9rem}
+button:hover{filter:brightness(1.07)}
+button.ghost{background:transparent;border:1px solid var(--p2);color:var(--p2)}
+button.mini{padding:7px 12px;font-size:.75rem;border-radius:8px}
+.link{background:none;border:0;color:var(--p2);padding:4px 0;font-size:.85rem;text-decoration:underline;cursor:pointer}
+.actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:6px;align-items:center}
+.chips{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px;align-items:center}
+.chip{border:0;padding:6px 12px;border-radius:999px;font-size:.75rem;color:#111;font-weight:700;cursor:pointer}
+.chip.off{opacity:.4}
+#cuenta{color:var(--muted);font-size:.8rem;margin-left:auto}
+.cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:14px}
+.card{background:#3a1019;border:1px solid var(--line);border-radius:var(--radius);overflow:hidden;display:flex;flex-direction:column}
+.cover{aspect-ratio:1/1;position:relative;display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,var(--p4),var(--p1),var(--p2));color:#fff;font-weight:300;font-size:3rem}
+.cover img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.body{padding:12px;display:flex;flex-direction:column;gap:6px;flex:1}
+.artist{font-weight:700;font-size:.9rem}
+.title{color:var(--muted);font-size:.78rem;line-height:1.3}
+.meta{display:flex;justify-content:space-between;align-items:center;margin-top:auto}
+.badge{padding:3px 9px;border-radius:999px;font-size:.7rem;font-weight:700;color:#111}
+.price{font-weight:700;color:var(--p5);font-size:.9rem}
+audio{width:100%;height:36px}
+.empty{text-align:center;color:var(--muted);padding:24px 8px;font-size:.9rem}
+.seller{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:12px 0;border-top:1px solid var(--line)}
+.seller:first-child{border-top:0}
+.seller small{display:block;color:var(--muted)}
+pre{white-space:pre-wrap;background:#3a1019;border:1px solid var(--line);border-radius:10px;padding:12px;font:inherit;font-size:.9rem;margin:0 0 10px}
+.modal{position:fixed;inset:0;background:rgba(40,8,16,.72);display:flex;align-items:center;justify-content:center;padding:20px;z-index:50}
+.caja{background:var(--card);border:1px solid var(--line);border-radius:22px;padding:22px 20px 18px;max-width:360px;width:100%;box-shadow:0 12px 40px rgba(0,0,0,.45);position:relative;overflow:hidden}
+.caja::before{content:"";position:absolute;top:0;left:0;right:0;height:5px;background:linear-gradient(90deg,var(--p1),var(--p2),var(--p5))}
+.caja h3{font-weight:300;font-size:.8rem;letter-spacing:4px;text-transform:uppercase;color:var(--p3);margin:4px 0 10px}
+.caja p{margin:0 0 20px;font-size:1rem;line-height:1.45}
+.caja .acciones{display:flex;gap:10px;justify-content:flex-end;flex-wrap:wrap}
+.caja button{min-width:110px}
+.chatrow{display:flex;gap:8px;margin-top:10px}
+.chatrow input{flex:1}
+#mensajes{display:flex;flex-direction:column;max-height:50vh;overflow-y:auto;padding:4px 0}
+.msg{max-width:80%;padding:10px 12px;border-radius:14px;margin:4px 0;font-size:.9rem;line-height:1.35;word-wrap:break-word}
+.msg.yo{align-self:flex-end;background:linear-gradient(90deg,var(--p1),var(--p2));color:#2a0b14}
+.msg.otro{align-self:flex-start;background:#3a1019}
+.tab.alerta{background:#ffd166;color:#2a0b14;border-color:#ffd166;font-weight:700;animation:pulso 1.4s infinite}
+.tab .n{display:inline-block;margin-left:6px;background:#2a0b14;color:#ffd166;border-radius:999px;padding:0 7px;font-size:.7rem}
+@keyframes pulso{0%,100%{box-shadow:0 0 0 0 rgba(255,209,102,.6)}50%{box-shadow:0 0 0 7px rgba(255,209,102,0)}}
+</style>
+</head>
+<body>
+<header><img class="logo" src="icon-512.png" alt="Spin The Vinyl Discos"></header>
+
+<nav class="tabs">
+  <button class="tab on" data-v="explorar">Explorar</button>
+  <button class="tab" data-v="stock">Mi stock</button>
+  <button class="tab" data-v="cargar">Cargar</button>
+  <button class="tab" data-v="consultas">Consultas</button>
+  <button class="tab" data-v="cuenta">Cuenta</button>
+</nav>
+
+<main>
+  <section class="view on" id="v-explorar">
+    <div class="panel" id="vitrinaVendedores">
+      <h2>Vendedores</h2>
+      <div id="listaVendedores"></div>
+    </div>
+    <div class="panel" id="vitrinaDetalle" hidden>
+      <button class="ghost mini" id="volverExplorar">← Volver</button>
+      <h2 id="tituloVidriera" style="margin-top:12px"></h2>
+      <div id="cardsVidriera" class="cards"></div>
+    </div>
+  </section>
+
+  <section class="view" id="v-stock">
+    <div class="panel">
+      <input id="buscar" class="search" type="search" placeholder="Buscar artista o título">
+      <div class="chips" id="filtros"></div>
+      <div class="chips"><span id="cuenta"></span></div>
+      <div id="cards" class="cards"></div>
+    </div>
+    <div class="panel">
+      <h2>Mi vidriera</h2>
+      <pre id="vidriera"></pre>
+      <button id="copiar">Copiar para Instagram o WhatsApp</button>
+    </div>
+  </section>
+
+  <section class="view" id="v-cargar">
+    <div class="panel" id="sinSesionCarga" hidden>
+      <p class="empty">Para cargar discos, primero ingresá desde la pestaña Cuenta.</p>
+    </div>
+    <div class="panel" id="formCarga" hidden>
+      <h2>Nuevo disco</h2>
+      <div class="grid">
+        <label>Artista<input id="artista" list="artistas" autocomplete="off" placeholder="Spinetta"></label>
+        <label>Título<input id="titulo" list="titulos" autocomplete="off" placeholder="Artaud"></label>
+        <datalist id="artistas"></datalist>
+        <datalist id="titulos"></datalist>
+        <label>Año<input id="anio" type="number" placeholder="1973"></label>
+        <label>Precio (ARS)<input id="precio" type="number" placeholder="25000"></label>
+        <label>Estado
+          <select id="estado">
+            <option value="M">M · Mint</option>
+            <option value="NM">NM · Near Mint</option>
+            <option value="VG+" selected>VG+ · Muy bueno</option>
+            <option value="VG">VG · Bueno</option>
+            <option value="G">G · Regular</option>
+          </select>
+        </label>
+        <label>Edición o sello<input id="edicion" placeholder="Movieplay, reedición 2004"></label>
+      </div>
+      <div class="grid">
+        <div class="fileBox">
+          <span>Tapa (JPG o PNG)</span>
+          <input type="file" id="fotoFile" accept="image/*">
+          <small id="fotoNombre">Sin archivo</small>
+        </div>
+        <div class="fileBox">
+          <span>Audio (MP3, 30 segundos)</span>
+          <input type="file" id="audioFile" accept="audio/*">
+          <small id="audioNombre">Sin archivo</small>
+        </div>
+      </div>
+      <div class="actions">
+        <button id="agregar">Publicar disco</button>
+        <button class="ghost" id="limpiarForm">Limpiar</button>
+      </div>
+    </div>
+  </section>
+
+  <section class="view" id="v-consultas">
+    <div class="panel" id="listaConsultas"></div>
+    <div class="panel" id="chatPanel" hidden>
+      <button class="ghost mini" id="cerrarChat">← Volver</button>
+      <h2 id="chatTitulo" style="margin-top:12px"></h2>
+      <div id="mensajes"></div>
+      <p class="nota" style="font-size:.75rem;color:var(--muted);margin:8px 0 0">Para pago y envío, cada uno puede compartir su WhatsApp en el chat. Solo lo ve la otra persona de esta consulta.</p>
+      <div class="chatrow">
+        <input id="miWa" type="tel" placeholder="Tu WhatsApp (ej: 3511234567)">
+        <button class="ghost mini" id="compartirWa">Compartir</button>
+      </div>
+      <div class="chatrow">
+        <input id="nuevoMensaje" placeholder="Escribí un mensaje">
+        <button id="enviarMensaje">Enviar</button>
+      </div>
+    </div>
+  </section>
+
+  <section class="view" id="v-cuenta">
+    <div class="panel" id="panelLogin">
+      <h2>Ingresar</h2>
+      <div class="grid">
+        <label>Email<input id="liEmail" type="email" autocomplete="email"></label>
+        <label>Contraseña<input id="liPass" type="password" autocomplete="current-password"></label>
+      </div>
+      <div class="actions">
+        <button id="ingresar">Ingresar</button>
+        <button class="link" id="irRegistro">¿No tenés cuenta? Registrate</button>
+      </div>
+    </div>
+
+    <div class="panel" id="panelRegistro" hidden>
+      <h2>Crear cuenta</h2>
+      <div class="grid">
+        <label>Nombre del local<input id="rgNombre" placeholder="Spin The Vinyl Discos"></label>
+        <label>Email<input id="rgEmail" type="email" autocomplete="email"></label>
+        <label>Contraseña (8+ letras y números)<input id="rgPass" type="password" autocomplete="new-password"></label>
+      </div>
+      <div class="actions">
+        <button id="registrar">Crear cuenta</button>
+        <button class="link" id="irLogin">Ya tengo cuenta</button>
+      </div>
+    </div>
+
+    <div class="panel" id="panelSesion" hidden>
+      <h2>Mi cuenta</h2>
+      <p id="sesionTexto"></p>
+      <div class="actions">
+        <button class="ghost" id="salir">Cerrar sesión</button>
+        <button class="ghost" id="instalar" style="display:none">Instalar app</button>
+      </div>
+    </div>
+  </section>
+</main>
+
+<div class="modal" id="modal" hidden>
+  <div class="caja">
+    <h3>Spin The Vinyl</h3>
+    <p id="modalTexto"></p>
+    <div class="acciones">
+      <button class="ghost" id="modalNo" hidden>Cancelar</button>
+      <button id="modalSi">Entendido</button>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.49.4/dist/umd/supabase.min.js"></script>
+<script>
+const SB_URL = "https://txrjvzamjapccrbhofam.supabase.co";
+const SB_KEY = "sb_publishable_jfJup65kWkFeDNaHX4TDkw_ErvYCztq";
+const APP_URL = "https://ochoporocho76.github.io/spin-the-vinyl/";
+const sb = supabase.createClient(SB_URL, SB_KEY);
+
+const ESTADOS={"M":{color:"#2ec4b6"},"NM":{color:"#7bd389"},"VG+":{color:"#ffd166"},"VG":{color:"#ff9f1c"},"G":{color:"#ff4d6d"}};
+let user=null, miNombre="", misDiscos=[], filtro=null, pendFoto="", pendAudio=null, registroVisible=false, deferred=null;
+
+const $=id=>document.getElementById(id);
+const norm=s=>(s||"").trim().toLowerCase();
+const fmt=n=>"$ "+Number(n).toLocaleString("es-AR");
+const esc=s=>String(s??"").replace(/&/g,"&amp;").replace(/"/g,"&quot;").replace(/</g,"&lt;");
+
+// Diálogos con los colores de la app
+function modal({texto,si="Entendido",no=null}){
+  return new Promise(res=>{
+    $("modalTexto").textContent=texto;
+    $("modalSi").textContent=si;
+    $("modalNo").hidden=!no;
+    $("modal").hidden=false;
+    const cerrar=v=>{$("modal").hidden=true;$("modalSi").onclick=null;$("modalNo").onclick=null;res(v);};
+    $("modalSi").onclick=()=>cerrar(true);
+    $("modalNo").onclick=()=>cerrar(false);
+  });
+}
+const aviso=t=>modal({texto:t});
+const confirmar=(t,si)=>modal({texto:t,si,no:"Cancelar"});
+
+function traducir(m){
+  const t={"Invalid login credentials":"Email o contraseña incorrectos.","Email not confirmed":"Todavía no confirmaste tu mail. Revisá tu bandeja de entrada.","User already registered":"Ya existe una cuenta con ese email."};
+  return t[m]||m;
+}
+
+// Navegación
+function ver(n){
+  document.querySelectorAll(".tab").forEach(b=>b.classList.toggle("on",b.dataset.v===n));
+  document.querySelectorAll(".view").forEach(v=>v.classList.toggle("on",v.id==="v-"+n));
+  if(n==="explorar") cargarVendedores();
+  if(n==="consultas"){cargarConsultas();marcarVisto();}
+  if(n==="stock") render();
+  if(n==="cargar") $("formCarga").hidden=!user, $("sinSesionCarga").hidden=!!user;
+  if(n==="cuenta") pintarCuenta();
+}
+document.querySelectorAll(".tab").forEach(b=>b.onclick=()=>ver(b.dataset.v));
+
+// Sesión
+async function cargarSesion(){
+  const {data}=await sb.auth.getSession();
+  user=data.session?.user||null;
+  if(user){
+    const {data:p}=await sb.from("perfiles").select("nombre_local").eq("id",user.id).maybeSingle();
+    miNombre=p?.nombre_local||"Mi local";
+    await cargarMisDiscos();
+  } else {
+    miNombre=""; misDiscos=[];
+  }
+  pintarCuenta();
+  render();
+}
+function pintarCuenta(){
+  $("panelSesion").hidden=!user;
+  $("panelLogin").hidden=!!user||registroVisible;
+  $("panelRegistro").hidden=!!user||!registroVisible;
+  if(user) $("sesionTexto").textContent=`Ingresaste como ${miNombre} (${user.email}).`;
+}
+async function ingresar(){
+  const {error}=await sb.auth.signInWithPassword({email:$("liEmail").value.trim(),password:$("liPass").value});
+  if(error) return aviso(traducir(error.message));
+  $("liPass").value="";
+  ver("stock");
+}
+async function registrar(){
+  const nombre=$("rgNombre").value.trim(), email=$("rgEmail").value.trim(), pass=$("rgPass").value;
+  if(!nombre||!email) return aviso("Completá el nombre del local y el email.");
+  if(pass.length<8||!/[A-Za-z]/.test(pass)||!/\d/.test(pass)) return aviso("La contraseña necesita 8 caracteres o más, con letras y números.");
+  const {error}=await sb.auth.signUp({email,password:pass,options:{data:{nombre_local:nombre},emailRedirectTo:APP_URL}});
+  if(error) return aviso(traducir(error.message));
+  $("rgPass").value="";
+  registroVisible=false;
+  await aviso("Te enviamos un mail. Tocá el link para confirmar tu cuenta y después ingresá.");
+  pintarCuenta();
+}
+async function salir(){ await sb.auth.signOut(); }
+sb.auth.onAuthStateChange(()=>{ setTimeout(()=>{ cargarSesion().then(revisarAvisos); },0); });
+setInterval(revisarAvisos,30000);
+
+// Explorar: vendedores y sus vidrieras
+async function cargarVendedores(){
+  $("vitrinaDetalle").hidden=true; $("vitrinaVendedores").hidden=false;
+  const cont=$("listaVendedores");
+  cont.innerHTML='<p class="empty">Cargando...</p>';
+  const [{data:perfiles,error:e1},{data:discos,error:e2}]=await Promise.all([
+    sb.from("perfiles").select("id,nombre_local").order("nombre_local"),
+    sb.from("discos").select("vendedor_id")
+  ]);
+  if(e1||e2){cont.innerHTML='<p class="empty">No se pudo cargar. Probá de nuevo.</p>';return;}
+  const conteo={};
+  discos.forEach(d=>conteo[d.vendedor_id]=(conteo[d.vendedor_id]||0)+1);
+  const con=perfiles.filter(p=>conteo[p.id]);
+  cont.innerHTML=con.length?"":'<p class="empty">Todavía no hay vidrieras publicadas.</p>';
+  con.forEach(p=>{
+    const div=document.createElement("div");
+    div.className="seller";
+    div.innerHTML=`<div><strong>${esc(p.nombre_local)}</strong><small>${conteo[p.id]} discos</small></div><button class="mini" data-id="${esc(p.id)}" data-nombre="${esc(p.nombre_local)}">Ver vidriera</button>`;
+    cont.appendChild(div);
+  });
+}
+async function verVidriera(id,nombre){
+  $("vitrinaVendedores").hidden=true; $("vitrinaDetalle").hidden=false;
+  $("tituloVidriera").textContent=nombre;
+  const cont=$("cardsVidriera");
+  cont.innerHTML='<p class="empty">Cargando...</p>';
+  const {data,error}=await sb.from("discos").select("*").eq("vendedor_id",id).order("created_at",{ascending:false});
+  cont.innerHTML="";
+  if(error||!data.length){cont.innerHTML='<p class="empty">Sin discos.</p>';return;}
+  data.forEach(d=>cont.appendChild(tarjeta(d,false)));
+}
+$("listaVendedores").onclick=e=>{
+  const b=e.target.closest("button[data-id]");
+  if(b) verVidriera(b.dataset.id,b.dataset.nombre);
+};
+$("volverExplorar").onclick=cargarVendedores;
+
+// Mis discos
+async function cargarMisDiscos(){
+  const {data,error}=await sb.from("discos").select("*").eq("vendedor_id",user.id).order("created_at",{ascending:false});
+  misDiscos=error?[]:data;
+}
+function visibles(){
+  const q=norm($("buscar").value);
+  return misDiscos.filter(d=>(!filtro||d.estado===filtro)&&(!q||norm(d.artista+" "+d.titulo).includes(q)));
+}
+function renderFiltros(){
+  $("filtros").innerHTML="";
+  Object.entries(ESTADOS).forEach(([k,v])=>{
+    const b=document.createElement("button");
+    b.className="chip"+(filtro&&filtro!==k?" off":"");
+    b.style.background=v.color;b.textContent=k;
+    b.onclick=()=>{filtro=filtro===k?null:k;render();};
+    $("filtros").appendChild(b);
+  });
+}
+function tarjeta(d,propia){
+  const c=document.createElement("article");c.className="card";
+  const cover=document.createElement("div");cover.className="cover";
+  cover.innerHTML=`<span>${esc((d.artista[0]||"?").toUpperCase())}</span>`;
+  if(d.foto_url){const i=document.createElement("img");i.alt="";i.loading="lazy";i.src=d.foto_url;i.onerror=()=>i.remove();cover.appendChild(i);}
+  const body=document.createElement("div");body.className="body";
+  body.innerHTML=`<div class="artist">${esc(d.artista)}</div>
+    <div class="title">${esc(d.titulo)}${d.anio?" · "+esc(d.anio):""}${d.edicion?" · "+esc(d.edicion):""}</div>
+    <div class="meta"><span class="badge" style="background:${ESTADOS[d.estado]?.color||"#ccc"}">${esc(d.estado)}</span><span class="price">${fmt(d.precio)}</span></div>`;
+  if(d.audio_url){const a=document.createElement("audio");a.controls=true;a.preload="none";a.src=d.audio_url;body.appendChild(a);}
+  if(propia){
+    const del=document.createElement("button");del.className="mini ghost";del.textContent="Eliminar";
+    del.onclick=async()=>{
+      if(!await confirmar(`¿Querés eliminar "${d.titulo}" de tu stock?`,"Eliminar")) return;
+      const {error}=await sb.from("discos").delete().eq("id",d.id);
+      if(error) return aviso("No se pudo eliminar. Probá de nuevo.");
+      const {data:files}=await sb.storage.from("media").list(user.id,{search:d.id});
+      if(files?.length) await sb.storage.from("media").remove(files.map(f=>`${user.id}/${f.name}`));
+      await cargarMisDiscos(); render();
+    };
+    body.appendChild(del);
+  }
+  if(!propia){
+    const b=document.createElement("button");b.className="mini";b.textContent="Me interesa";
+    b.onclick=()=>consultarDisco(d);
+    body.appendChild(b);
+  }
+  c.append(cover,body);
+  return c;
+}
+function sugerencias(){
+  $("artistas").innerHTML=[...new Set(misDiscos.map(d=>d.artista))].sort().map(a=>`<option value="${esc(a)}">`).join("");
+  const a=norm($("artista").value);
+  $("titulos").innerHTML=[...new Set(misDiscos.filter(d=>!a||norm(d.artista)===a).map(d=>d.titulo))].sort().map(t=>`<option value="${esc(t)}">`).join("");
+}
+function autocompletar(){
+  const a=norm($("artista").value),t=norm($("titulo").value);
+  const d=misDiscos.find(x=>norm(x.artista)===a&&norm(x.titulo)===t);
+  if(!d) return;
+  if(!$("anio").value) $("anio").value=d.anio||"";
+  if(!$("edicion").value) $("edicion").value=d.edicion||"";
+}
+function render(){
+  sugerencias();renderFiltros();
+  const l=visibles(),cont=$("cards");cont.innerHTML="";
+  if(!user) cont.innerHTML='<p class="empty">Ingresá desde Cuenta para ver tu stock.</p>';
+  else if(!misDiscos.length) cont.innerHTML='<p class="empty">Todavía no cargaste discos. Andá a Cargar.</p>';
+  else if(!l.length) cont.innerHTML='<p class="empty">Ningún disco coincide.</p>';
+  else l.forEach(d=>cont.appendChild(tarjeta(d,true)));
+  $("cuenta").textContent=`${l.length} de ${misDiscos.length} discos`;
+  $("vidriera").textContent=misDiscos.length
+    ?`🎶 ${miNombre}\n\n`+misDiscos.map(d=>`• ${d.artista} - ${d.titulo}${d.anio?" ("+d.anio+")":""} | ${d.estado} | ${fmt(d.precio)}`).join("\n")+"\n\nConsultas por WhatsApp."
+    :"Agregá discos para ver tu vidriera.";
+}
+
+// Aviso de mensajes nuevos en la pestaña Consultas
+async function marcarVisto(){
+  const {data}=await sb.from("mensajes").select("created_at").order("created_at",{ascending:false}).limit(1);
+  if(data?.length) localStorage.setItem("visto-consultas",data[0].created_at);
+  revisarAvisos();
+}
+async function revisarAvisos(){
+  const t=document.querySelector('.tab[data-v="consultas"]');
+  if(!user){t.classList.remove("alerta");t.textContent="Consultas";return;}
+  if(document.getElementById("v-consultas").classList.contains("on")) {
+    const visto=localStorage.getItem("visto-consultas")||"1970-01-01T00:00:00Z";
+    const {count}=await sb.from("mensajes").select("id",{count:"exact",head:true}).neq("autor_id",user.id).gt("created_at",visto);
+    if(!count){t.classList.remove("alerta");t.textContent="Consultas";}
+    return;
+  }
+  const visto=localStorage.getItem("visto-consultas")||"1970-01-01T00:00:00Z";
+  const {count}=await sb.from("mensajes").select("id",{count:"exact",head:true}).neq("autor_id",user.id).gt("created_at",visto);
+  t.classList.toggle("alerta",!!count);
+  t.innerHTML=count?`Consultas <span class="n">${count}</span>`:"Consultas";
+}
+
+// Consultas y chat dentro de la app
+let consultaActiva=null;
+async function consultarDisco(d){
+  if(!user) return aviso("Ingresá o registrate desde Cuenta para consultar.");
+  if(d.vendedor_id===user.id) return aviso("Este disco es tuyo.");
+  let {data:c}=await sb.from("consultas").select("*").eq("disco_id",d.id).eq("comprador_id",user.id).maybeSingle();
+  if(!c){
+    const {data,error}=await sb.from("consultas").insert({
+      disco_id:d.id,vendedor_id:d.vendedor_id,comprador_id:user.id,
+      artista_disco:d.artista,titulo_disco:d.titulo
+    }).select().single();
+    if(error) return aviso("No se pudo iniciar la consulta.");
+    c=data;
+  }
+  ver("consultas");
+  await abrirConsulta(c);
+}
+async function cargarConsultas(){
+  const lista=$("listaConsultas");
+  $("chatPanel").hidden=!consultaActiva;
+  lista.hidden=!!consultaActiva;
+  if(consultaActiva) return;
+  if(!user){lista.innerHTML='<p class="empty">Ingresá desde Cuenta para ver tus consultas.</p>';return;}
+  lista.innerHTML='<p class="empty">Cargando...</p>';
+  const {data,error}=await sb.from("consultas").select("*").or(`vendedor_id.eq.${user.id},comprador_id.eq.${user.id}`).order("created_at",{ascending:false});
+  if(error){lista.innerHTML='<p class="empty">No se pudieron cargar.</p>';return;}
+  if(!data.length){lista.innerHTML='<p class="empty">Todavía no tenés consultas.</p>';return;}
+  lista.innerHTML="";
+  data.forEach(c=>{
+    const soyVendedor=c.vendedor_id===user.id;
+    const div=document.createElement("div");div.className="seller";
+    div.innerHTML=`<div><strong>${esc(c.artista_disco)} - ${esc(c.titulo_disco)}</strong><small>${soyVendedor?"Consulta recibida":"Tu consulta"}</small></div><button class="mini">Abrir</button>`;
+    div.querySelector("button").onclick=()=>abrirConsulta(c);
+    lista.appendChild(div);
+  });
+}
+async function abrirConsulta(c){
+  consultaActiva=c;
+  $("listaConsultas").hidden=true;
+  $("chatPanel").hidden=false;
+  $("chatTitulo").textContent=`${c.artista_disco} - ${c.titulo_disco}`;
+  await pintarMensajes();
+}
+async function pintarMensajes(){
+  if(!consultaActiva) return;
+  const cont=$("mensajes");
+  const {data,error}=await sb.from("mensajes").select("*").eq("consulta_id",consultaActiva.id).order("created_at");
+  cont.innerHTML="";
+  if(error){cont.innerHTML='<p class="empty">No se pudieron cargar los mensajes.</p>';return;}
+  if(!data.length) cont.innerHTML='<p class="empty">Escribí el primer mensaje para consultar.</p>';
+  data.forEach(m=>{
+    const div=document.createElement("div");
+    div.className="msg "+(m.autor_id===user.id?"yo":"otro");
+    div.innerHTML=conLinks(m.texto);
+    cont.appendChild(div);
+  });
+  cont.scrollTop=cont.scrollHeight;
+}
+async function enviarMensaje(){
+  const texto=$("nuevoMensaje").value.trim();
+  if(!texto||!consultaActiva) return;
+  const {error}=await sb.from("mensajes").insert({consulta_id:consultaActiva.id,autor_id:user.id,texto});
+  if(error) return aviso("No se pudo enviar el mensaje.");
+  $("nuevoMensaje").value="";
+  await pintarMensajes();
+}
+function conLinks(t){
+  return esc(t).replace(/https?:\/\/[^\s]+/g,u=>`<a href="${u}" target="_blank" rel="noopener" style="color:inherit;text-decoration:underline">${u}</a>`);
+}
+async function compartirWa(){
+  if(!consultaActiva) return;
+  let n=$("miWa").value.replace(/\D/g,"");
+  if(n.length<8) return aviso("Escribí tu número de WhatsApp con código de área, por ejemplo 3511234567.");
+  n=n.replace(/^0/,"");
+  if(!n.startsWith("54")) n="54"+n;
+  const texto=`WhatsApp para coordinar pago y envío: https://wa.me/${n}`;
+  const {error}=await sb.from("mensajes").insert({consulta_id:consultaActiva.id,autor_id:user.id,texto});
+  if(error) return aviso("No se pudo compartir el WhatsApp.");
+  $("miWa").value="";
+  await pintarMensajes();
+}
+$("compartirWa").onclick=compartirWa;
+$("enviarMensaje").onclick=enviarMensaje;
+$("nuevoMensaje").addEventListener("keydown",e=>{if(e.key==="Enter")enviarMensaje();});
+$("cerrarChat").onclick=()=>{consultaActiva=null;cargarConsultas();};
+// Mientras el chat está abierto, busca mensajes nuevos cada 20 segundos
+setInterval(()=>{if(consultaActiva) pintarMensajes();},20000);
+
+// Carga de discos
+function leerImagen(file){
+  return new Promise((res,rej)=>{
+    const img=new Image();
+    img.onload=()=>{
+      const s=Math.min(1,600/Math.max(img.width,img.height));
+      const c=document.createElement("canvas");
+      c.width=Math.round(img.width*s);c.height=Math.round(img.height*s);
+      c.getContext("2d").drawImage(img,0,0,c.width,c.height);
+      URL.revokeObjectURL(img.src);
+      res(c.toDataURL("image/jpeg",0.8));
+    };
+    img.onerror=rej;
+    img.src=URL.createObjectURL(file);
+  });
+}
+$("fotoFile").onchange=async e=>{
+  const f=e.target.files[0];if(!f)return;
+  try{pendFoto=await leerImagen(f);$("fotoNombre").textContent="✔ "+f.name;}
+  catch{aviso("No se pudo leer la imagen.");}
+};
+$("audioFile").onchange=e=>{
+  const f=e.target.files[0];if(!f)return;
+  if(f.size>1024*1024){
+    aviso("El audio es muy pesado. Usá un preview de 30 segundos en MP3.");
+    e.target.value="";pendAudio=null;$("audioNombre").textContent="Sin archivo";return;
+  }
+  pendAudio=f;$("audioNombre").textContent="✔ "+f.name;
+};
+function limpiarForm(){
+  ["artista","titulo","anio","precio","edicion"].forEach(i=>$(i).value="");
+  $("estado").value="VG+";$("fotoFile").value="";$("audioFile").value="";
+  pendFoto="";pendAudio=null;
+  $("fotoNombre").textContent="Sin archivo";$("audioNombre").textContent="Sin archivo";
+}
+async function publicarDisco(){
+  if(!user) return aviso("Ingresá primero desde Cuenta.");
+  const artista=$("artista").value.trim(),titulo=$("titulo").value.trim(),precio=parseFloat($("precio").value);
+  if(!artista||!titulo||isNaN(precio)) return aviso("Completá artista, título y precio.");
+  const id=crypto.randomUUID();
+  let foto_url=null,audio_url=null;
+  $("agregar").disabled=true;$("agregar").textContent="Publicando...";
+  try{
+    if(pendFoto){
+      const blob=await (await fetch(pendFoto)).blob();
+      const path=`${user.id}/${id}.jpg`;
+      const {error}=await sb.storage.from("media").upload(path,blob,{contentType:"image/jpeg"});
+      if(error) throw error;
+      foto_url=sb.storage.from("media").getPublicUrl(path).data.publicUrl;
+    }
+    if(pendAudio){
+      const ext=(pendAudio.name.split(".").pop()||"mp3").toLowerCase();
+      const path=`${user.id}/${id}.${ext}`;
+      const {error}=await sb.storage.from("media").upload(path,pendAudio,{contentType:pendAudio.type||"audio/mpeg"});
+      if(error) throw error;
+      audio_url=sb.storage.from("media").getPublicUrl(path).data.publicUrl;
+    }
+    const {error}=await sb.from("discos").insert({
+      id,vendedor_id:user.id,artista,titulo,
+      anio:$("anio").value.trim()||null,precio,estado:$("estado").value,
+      edicion:$("edicion").value.trim()||null,foto_url,audio_url
+    });
+    if(error) throw error;
+  }catch(e){
+    aviso("No se pudo publicar el disco. "+(e.message||""));
+    return;
+  }finally{
+    $("agregar").disabled=false;$("agregar").textContent="Publicar disco";
+  }
+  limpiarForm();
+  await cargarMisDiscos();
+  ver("stock");
+}
+$("agregar").onclick=publicarDisco;
+$("limpiarForm").onclick=limpiarForm;
+$("buscar").oninput=render;
+$("artista").addEventListener("input",sugerencias);
+$("artista").addEventListener("change",()=>{sugerencias();autocompletar();});
+$("titulo").addEventListener("input",autocompletar);
+$("titulo").addEventListener("change",autocompletar);
+
+// Botones de cuenta
+$("ingresar").onclick=ingresar;
+$("registrar").onclick=registrar;
+$("salir").onclick=salir;
+$("irRegistro").onclick=()=>{registroVisible=true;pintarCuenta();};
+$("irLogin").onclick=()=>{registroVisible=false;pintarCuenta();};
+
+$("copiar").onclick=async()=>{
+  try{
+    await navigator.clipboard.writeText($("vidriera").textContent);
+    $("copiar").textContent="¡Copiado!";
+    setTimeout(()=>$("copiar").textContent="Copiar para Instagram o WhatsApp",1500);
+  }catch{aviso("No se pudo copiar. Seleccioná el texto a mano.");}
+};
+window.addEventListener("beforeinstallprompt",e=>{e.preventDefault();deferred=e;$("instalar").style.display="inline-block";});
+$("instalar").onclick=async()=>{
+  if(!deferred)return;
+  deferred.prompt();await deferred.userChoice;
+  deferred=null;$("instalar").style.display="none";
+};
+
+if("serviceWorker" in navigator) navigator.serviceWorker.register("sw.js").catch(()=>{});
+cargarVendedores();
+</script>
+</body>
+</html>
