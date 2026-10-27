@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#4a1420">
+<meta name="description" content="Spin The Vinyl: vidriera de discos para vendedores de Argentina">
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icon-192.png" type="image/png">
+<link rel="apple-touch-icon" href="icon-512.png">
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
+<title>Spin The Vinyl</title>
+<style>
+:root{
+  --p1:#e8607a; --p2:#ffb38a; --p3:#ffd6b8; --p4:#8c2a3d; --p5:#ffc9a0;
+  --bg:#4a1420; --card:#5c1b2a; --fg:#fff3ec; --muted:#e8b9b5; --line:#6e2a3a;
+  --radius:16px;
+}
+*{box-sizing:border-box}
+body{
+  margin:0; min-height:100vh; font-family:Poppins,system-ui,sans-serif; color:var(--fg);
+  background:radial-gradient(circle at 15% 0%, #7a2a40 0%, transparent 40%),
+             radial-gradient(circle at 90% 10%, #5c1b2a 0%, transparent 35%), var(--bg);
+  padding:env(safe-area-inset-top,0px) 0 env(safe-area-inset-bottom,0px);
+}
+header{
+  padding:24px 16px 12px; text-align:center;
+}
+.logo{display:block; width:min(260px,70vw); height:auto; margin:0 auto}
+.sub{color:var(--muted); font-size:.85rem; margin:4px 0 0}
+main{max-width:1100px; margin:0 auto; padding:16px}
+.panel{background:var(--card); border:1px solid var(--line); border-radius:var(--radius); padding:16px; margin-bottom:18px}
+h2{font-family:"Bebas Neue",Impact,sans-serif; font-size:1.7rem; letter-spacing:1.5px; margin:0 0 12px; color:var(--p5)}
+.grid-form{display:grid; grid-template-columns:repeat(auto-fit,minmax(170px,1fr)); gap:10px}
+label{font-size:.78rem; color:var(--muted); display:flex; flex-direction:column; gap:4px}
+input,select{
+  background:#0e0718; color:var(--fg); border:1px solid var(--line); border-radius:10px;
+  padding:10px; font:inherit; font-size:.95rem; width:100%;
+}
+input:focus,select:focus{outline:2px solid var(--p3); border-color:transparent}
+button{
+  font-family:Poppins,sans-serif; font-weight:600; border:0; border-radius:12px; padding:11px 18px;
+  color:#fff; background:linear-gradient(90deg,var(--p1),var(--p2)); cursor:pointer; font-size:.95rem;
+}
+button:hover{filter:brightness(1.08)}
+button.alt{background:linear-gradient(90deg,var(--p3),var(--p4))}
+button.ghost{background:transparent; border:1px solid var(--p5); color:var(--p5)}
+button.mini{padding:6px 10px; font-size:.78rem; border-radius:8px}
+.actions{display:flex; gap:10px; flex-wrap:wrap; margin-top:12px}
+.toolbar{display:flex; gap:10px; flex-wrap:wrap; align-items:center; margin-bottom:14px}
+.toolbar input{max-width:260px}
+.chips{display:flex; gap:6px; flex-wrap:wrap}
+.chip{border:0; padding:6px 12px; border-radius:999px; font-size:.78rem; color:#111; font-weight:700; cursor:pointer}
+.chip.off{opacity:.45}
+.count{margin-left:auto; color:var(--muted); font-size:.85rem}
+.cards{display:grid; grid-template-columns:repeat(auto-fill,minmax(210px,1fr)); gap:14px}
+.card{background:linear-gradient(160deg,#2a1545,#1a0f2b); border:1px solid var(--line); border-radius:var(--radius); overflow:hidden; display:flex; flex-direction:column; transition:transform .15s}
+.card:hover{transform:translateY(-3px)}
+.cover{aspect-ratio:1/1; width:100%; object-fit:cover; background:linear-gradient(135deg,var(--p4),var(--p1),var(--p2)); display:flex; align-items:center; justify-content:center; font-family:"Bebas Neue",Impact,sans-serif; font-size:3rem; color:#fff; position:relative}
+.cover img{position:absolute; inset:0; width:100%; height:100%; object-fit:cover}
+.body{padding:12px; display:flex; flex-direction:column; gap:6px; flex:1}
+.artist{font-weight:700; font-size:.95rem; line-height:1.2}
+.title{color:var(--muted); font-size:.85rem; line-height:1.2}
+.meta{display:flex; justify-content:space-between; align-items:center; gap:6px; margin-top:auto}
+.badge{padding:3px 9px; border-radius:999px; font-size:.72rem; font-weight:700; color:#111}
+.price{font-weight:700; color:var(--p5)}
+audio{width:100%; height:36px; margin-top:4px}
+.card-actions{display:flex; justify-content:space-between; gap:6px}
+.empty{text-align:center; color:var(--muted); padding:30px 10px}
+pre{white-space:pre-wrap; background:#0e0718; border:1px solid var(--line); border-radius:10px; padding:12px; font:inherit; font-size:.9rem; margin:0 0 10px; color:var(--fg)}
+.install{display:none}
+.install.show{display:inline-block}
+</style>
+</head>
+<body>
+<header>
+  <img class="logo" src="logo.png" alt="Spin The Vinyl Discos">
+  <p class="sub">Cargá tus discos, mostralos y compartilos en un toque</p>
+</header>
+
+<main>
+  <section class="panel">
+    <h2>Nuevo disco</h2>
+    <div class="grid-form">
+      <label>Artista<input id="artista" list="artistas" autocomplete="off" placeholder="Spinetta"></label>
+      <label>Título<input id="titulo" list="titulos" autocomplete="off" placeholder="Artaud"></label>
+      <datalist id="artistas"></datalist>
+      <datalist id="titulos"></datalist>
+      <label>Año<input id="anio" type="number" placeholder="1973"></label>
+      <label>Precio (ARS)<input id="precio" type="number" placeholder="25000"></label>
+      <label>Estado
+        <select id="estado">
+          <option value="M">M · Mint</option>
+          <option value="NM">NM · Near Mint</option>
+          <option value="VG+" selected>VG+ · Muy bueno</option>
+          <option value="VG">VG · Bueno</option>
+          <option value="G">G · Regular</option>
+        </select>
+      </label>
+      <label>Edición o sello<input id="edicion" placeholder="Movieplay, reedición 2004"></label>
+      <label>URL de la foto de tapa<input id="foto" type="url" placeholder="https://..."></label>
+      <label>URL de audio (preview)<input id="audio" type="url" placeholder="https://...mp3"></label>
+    </div>
+    <div class="actions">
+      <button id="agregar">Agregar a la vidriera</button>
+      <button class="ghost" id="limpiarForm">Limpiar</button>
+    </div>
+  </section>
+
+  <section class="panel">
+    <div class="toolbar">
+      <input id="buscar" type="search" placeholder="Buscar artista o título">
+      <div class="chips" id="filtros"></div>
+      <span class="count" id="cuenta"></span>
+    </div>
+    <div id="cards" class="cards"></div>
+  </section>
+
+  <section class="panel">
+    <h2>Vidriera para compartir</h2>
+    <pre id="vidriera"></pre>
+    <div class="actions">
+      <button class="alt" id="copiar">Copiar para Instagram o WhatsApp</button>
+      <button class="ghost install" id="instalar">Instalar app</button>
+    </div>
+  </section>
+</main>
+
+<script>
+const ESTADOS = {
+  "M":   { label: "Mint",        color: "#2ec4b6" },
+  "NM":  { label: "Near Mint",   color: "#7bd389" },
+  "VG+": { label: "Muy bueno",   color: "#ffd166" },
+  "VG":  { label: "Bueno",       color: "#ff9f1c" },
+  "G":   { label: "Regular",     color: "#ff4d6d" }
+};
+const STORAGE_KEY = "vidriera-vinilos-v1";
+let discos = [];
+let filtroEstado = null;
+let deferredPrompt = null;
+
+const $ = id => document.getElementById(id);
+const fmt = n => "$ " + Number(n).toLocaleString("es-AR");
+
+function cargar(){
+  try { discos = JSON.parse(localStorage.getItem(STORAGE_KEY)) || []; }
+  catch { discos = []; }
+}
+function guardar(){
+  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(discos)); } catch {}
+}
+
+function renderFiltros(){
+  const cont = $("filtros");
+  cont.innerHTML = "";
+  Object.entries(ESTADOS).forEach(([k, v]) => {
+    const b = document.createElement("button");
+    b.className = "chip" + (filtroEstado && filtroEstado !== k ? " off" : "");
+    b.style.background = v.color;
+    b.textContent = k;
+    b.title = v.label;
+    b.onclick = () => { filtroEstado = filtroEstado === k ? null : k; render(); };
+    cont.appendChild(b);
+  });
+}
+
+function visibles(){
+  const q = $("buscar").value.trim().toLowerCase();
+  return discos.filter(d =>
+    (!filtroEstado || d.estado === filtroEstado) &&
+    (!q || `${d.artista} ${d.titulo}`.toLowerCase().includes(q))
+  );
+}
+
+function tarjeta(d){
+  const card = document.createElement("article");
+  card.className = "card";
+
+  const cover = document.createElement("div");
+  cover.className = "cover";
+  const inicial = document.createElement("span");
+  inicial.textContent = (d.artista[0] || "?").toUpperCase();
+  cover.appendChild(inicial);
+  if (d.foto) {
+    const img = document.createElement("img");
+    img.alt = `Tapa de ${d.titulo}`;
+    img.loading = "lazy";
+    img.src = d.foto;
+    img.onerror = () => img.remove();
+    cover.appendChild(img);
+  }
+
+  const body = document.createElement("div");
+  body.className = "body";
+  body.innerHTML = `
+    <div class="artist"></div>
+    <div class="title"></div>
+    <div class="meta">
+      <span class="badge"></span>
+      <span class="price"></span>
+    </div>`;
+  body.querySelector(".artist").textContent = d.artista;
+  body.querySelector(".title").textContent = d.titulo + (d.anio ? " · " + d.anio : "") + (d.edicion ? " · " + d.edicion : "");
+  const badge = body.querySelector(".badge");
+  badge.textContent = d.estado;
+  badge.style.background = ESTADOS[d.estado]?.color || "#ccc";
+  body.querySelector(".price").textContent = fmt(d.precio);
+
+  if (d.audio) {
+    const a = document.createElement("audio");
+    a.controls = true;
+    a.preload = "none";
+    a.src = d.audio;
+    body.appendChild(a);
+  }
+
+  const acciones = document.createElement("div");
+  acciones.className = "card-actions";
+  const del = document.createElement("button");
+  del.className = "mini ghost";
+  del.textContent = "Eliminar";
+  del.onclick = () => {
+    if (confirm(`¿Eliminar ${d.titulo}?`)) {
+      discos = discos.filter(x => x.id !== d.id);
+      guardar(); render();
+    }
+  };
+  acciones.appendChild(del);
+  body.appendChild(acciones);
+
+  card.appendChild(cover);
+  card.appendChild(body);
+  return card;
+}
+
+function render(){
+  renderFiltros();
+  actualizarSugerencias();
+  const lista = visibles();
+  const cont = $("cards");
+  cont.innerHTML = "";
+  if (!discos.length) {
+    cont.innerHTML = '<p class="empty">Todavía no cargaste discos. Empezá con el formulario de arriba.</p>';
+  } else if (!lista.length) {
+    cont.innerHTML = '<p class="empty">Ningún disco coincide con el filtro.</p>';
+  } else {
+    lista.forEach(d => cont.appendChild(tarjeta(d)));
+  }
+  $("cuenta").textContent = `${lista.length} de ${discos.length} discos`;
+  $("vidriera").textContent = discos.length
+    ? "🎶 Discos disponibles\n\n" + discos.map(d =>
+        `• ${d.artista} - ${d.titulo}${d.anio ? " (" + d.anio + ")" : ""} | ${d.estado} | ${fmt(d.precio)}`
+      ).join("\n") + "\n\nConsultas por WhatsApp."
+    : "Agregá discos para ver la vidriera.";
+}
+
+function norm(s){ return (s || "").trim().toLowerCase(); }
+function escAttr(s){
+  return String(s).replace(/&/g, "&amp;").replace(/"/g, "&quot;").replace(/</g, "&lt;");
+}
+
+// Sugiere artistas y títulos ya cargados en tu propio stock
+function actualizarSugerencias(){
+  const artistas = [...new Set(discos.map(d => d.artista))].sort();
+  $("artistas").innerHTML = artistas.map(a => `<option value="${escAttr(a)}">`).join("");
+
+  const artistaActual = norm($("artista").value);
+  const titulos = [...new Set(
+    discos.filter(d => !artistaActual || norm(d.artista) === artistaActual).map(d => d.titulo)
+  )].sort();
+  $("titulos").innerHTML = titulos.map(t => `<option value="${escAttr(t)}">`).join("");
+}
+
+// Si el artista y el título coinciden con un disco ya cargado, completa los campos vacíos
+function autocompletarDesdeStock(){
+  const a = norm($("artista").value);
+  const t = norm($("titulo").value);
+  if (!a || !t) return;
+  const d = discos.find(x => norm(x.artista) === a && norm(x.titulo) === t);
+  if (!d) return;
+  if (!$("anio").value) $("anio").value = d.anio || "";
+  if (!$("edicion").value) $("edicion").value = d.edicion || "";
+  if (!$("foto").value) $("foto").value = d.foto || "";
+  if (!$("audio").value) $("audio").value = d.audio || "";
+}
+
+function limpiarForm(){
+  ["artista","titulo","anio","precio","edicion","foto","audio"].forEach(id => $(id).value = "");
+  $("estado").value = "VG+";
+}
+
+$("agregar").onclick = () => {
+  const artista = $("artista").value.trim();
+  const titulo = $("titulo").value.trim();
+  const precio = parseFloat($("precio").value);
+  if (!artista || !titulo || isNaN(precio)) {
+    alert("Completá artista, título y precio.");
+    return;
+  }
+  discos.unshift({
+    id: Date.now().toString(36),
+    artista, titulo,
+    anio: $("anio").value.trim(),
+    precio,
+    estado: $("estado").value,
+    edicion: $("edicion").value.trim(),
+    foto: $("foto").value.trim(),
+    audio: $("audio").value.trim()
+  });
+  guardar();
+  limpiarForm();
+  render();
+};
+$("limpiarForm").onclick = limpiarForm;
+$("buscar").oninput = render;
+
+$("artista").addEventListener("input", actualizarSugerencias);
+$("artista").addEventListener("change", () => { actualizarSugerencias(); autocompletarDesdeStock(); });
+$("titulo").addEventListener("input", autocompletarDesdeStock);
+$("titulo").addEventListener("change", autocompletarDesdeStock);
+
+$("copiar").onclick = async () => {
+  try {
+    await navigator.clipboard.writeText($("vidriera").textContent);
+    $("copiar").textContent = "¡Copiado!";
+    setTimeout(() => $("copiar").textContent = "Copiar para Instagram o WhatsApp", 1500);
+  } catch {
+    alert("No se pudo copiar. Seleccioná el texto y copialo a mano.");
+  }
+};
+
+window.addEventListener("beforeinstallprompt", e => {
+  e.preventDefault();
+  deferredPrompt = e;
+  $("instalar").classList.add("show");
+});
+$("instalar").onclick = async () => {
+  if (!deferredPrompt) return;
+  deferredPrompt.prompt();
+  await deferredPrompt.userChoice;
+  deferredPrompt = null;
+  $("instalar").classList.remove("show");
+};
+
+if ("serviceWorker" in navigator) {
+  navigator.serviceWorker.register("sw.js").catch(() => {});
+}
+
+cargar();
+render();
+</script>
+</body>
+</html>
