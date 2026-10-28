@@ -1,4 +1,4 @@
-const CACHE = "spin-the-vinyl-v14";
+const CACHE = "spin-the-vinyl-v15";
 const SHELL = ["./", "./index.html", "./manifest.json", "./icon-192.png", "./icon-512.png"];
 
 self.addEventListener("install", e => {
@@ -29,4 +29,20 @@ self.addEventListener("fetch", e => {
       return cached || red;
     })
   );
+});
+
+
+self.addEventListener("notificationclick", event => {
+  event.notification.close();
+  const target = new URL(event.notification.data?.url || "./", self.location.href).href;
+  event.waitUntil((async () => {
+    const clientsList = await self.clients.matchAll({ type: "window", includeUncontrolled: true });
+    for (const client of clientsList) {
+      if (client.url.startsWith(self.location.origin) && "focus" in client) {
+        await client.focus();
+        return;
+      }
+    }
+    if (self.clients.openWindow) await self.clients.openWindow(target);
+  })());
 });

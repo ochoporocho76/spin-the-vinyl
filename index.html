@@ -346,12 +346,34 @@ async function registrar(){
   pintarCuenta();
 }
 async function salir(){ await sb.auth.signOut(); }
-sb.auth.onAuthStateChange(()=>{ setTimeout(()=>{ cargarSesion().then(revisarAvisos); },0); });
+let canalMensajes=null;
+function escucharMensajesEnVivo(){
+  if(canalMensajes){sb.removeChannel(canalMensajes);canalMensajes=null;}
+  if(!user)return;
+  canalMensajes=sb.channel("mensajes-en-vivo-"+user.id)
+    .on("postgres_changes",{event:"INSERT",schema:"public",table:"mensajes"},async payload=>{
+      const m=payload.new;
+      if(!m||m.autor_id===user.id)return;
+      await revisarAvisos();
+      // Si el chat correspondiente ya está abierto, actualizarlo sin esperar al sondeo.
+      if(consultaActiva&&m.consulta_id===consultaActiva.id){await pintarMensajes();return;}
+      // Notificación del sistema cuando el permiso está concedido y la app está en segundo plano.
+      if("Notification" in window&&Notification.permission==="granted"&&document.visibilityState!=="visible"){
+        const {data:c}=await sb.from("consultas").select("artista_disco,titulo_disco").eq("id",m.consulta_id).maybeSingle();
+        const titulo=c?`${c.artista_disco} - ${c.titulo_disco}`:"Nuevo mensaje en Spin The Vinyl";
+        if("serviceWorker" in navigator){
+          const reg=await navigator.serviceWorker.ready;
+          reg.showNotification("Nuevo mensaje · Spin The Vinyl",{body:titulo,icon:"icon-192.png",badge:"icon-192.png",tag:"stv-"+m.consulta_id,data:{url:"./"}}).catch(()=>{});
+        }else new Notification("Nuevo mensaje · Spin The Vinyl",{body:titulo});
+      }
+    }).subscribe();
+}
+sb.auth.onAuthStateChange(()=>{ setTimeout(()=>{ cargarSesion().then(()=>{revisarAvisos();escucharMensajesEnVivo();}); },0); });
 setInterval(revisarAvisos,30000);
 $("activarAvisos").onclick=async()=>{
   if(!("Notification" in window)) return aviso("Este navegador no admite notificaciones.");
   const permiso=await Notification.requestPermission();
-  if(permiso==="granted") aviso("Avisos activados en este dispositivo mientras Spin The Vinyl esté abierto.");
+  if(permiso==="granted") aviso("Avisos activados. Recibirás alertas mientras la app esté abierta; para recibirlas cerrada falta configurar el envío push del servidor.");
   else aviso("No se habilitaron los avisos. Podés permitirlos desde la configuración del navegador.");
 };
 
@@ -634,6 +656,7 @@ async function enviarMensaje(){
   if(error) return aviso("No se pudo enviar el mensaje.");
   $("nuevoMensaje").value="";
   await pintarMensajes();
+  await revisarAvisos();
 }
 function conLinks(t){
   return esc(t).replace(/https?:\/\/[^\s]+/g,u=>`<a href="${u}" target="_blank" rel="noopener" style="color:inherit;text-decoration:underline">${u}</a>`);
