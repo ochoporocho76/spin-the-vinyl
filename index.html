@@ -44,13 +44,13 @@ button.mini{padding:7px 12px;font-size:.75rem;border-radius:8px}
 .chip.off{opacity:.4}
 #cuenta{color:var(--muted);font-size:.8rem;margin-left:auto}
 .cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:14px}
-#cardsVidriera.horizontal{grid-template-columns:repeat(auto-fill,minmax(112px,1fr));gap:8px}
-#cardsVidriera.horizontal .cover{font-size:1.8rem}
-#cardsVidriera.horizontal .body{padding:8px;gap:4px}
-#cardsVidriera.horizontal .artist{font-size:.76rem}
-#cardsVidriera.horizontal .title{font-size:.68rem}
-#cardsVidriera.horizontal .price{font-size:.78rem}
-#cardsVidriera.horizontal button{padding:6px 8px;font-size:.68rem}
+#cardsVidriera.horizontal,#cards.horizontal{grid-template-columns:repeat(auto-fill,minmax(112px,1fr));gap:8px}
+#cardsVidriera.horizontal .cover,#cards.horizontal .cover{font-size:1.8rem}
+#cardsVidriera.horizontal .body,#cards.horizontal .body{padding:8px;gap:4px}
+#cardsVidriera.horizontal .artist,#cards.horizontal .artist{font-size:.76rem}
+#cardsVidriera.horizontal .title,#cards.horizontal .title{font-size:.68rem}
+#cardsVidriera.horizontal .price,#cards.horizontal .price{font-size:.78rem}
+#cardsVidriera.horizontal button,#cards.horizontal button{padding:6px 8px;font-size:.68rem}
 .vitrina-tools{display:flex;gap:8px;align-items:center;justify-content:flex-end;flex-wrap:wrap;margin:10px 0}
 .card{background:#3a1019;border:1px solid var(--line);border-radius:var(--radius);overflow:hidden;display:flex;flex-direction:column}
 .cover{aspect-ratio:1/1;position:relative;display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,var(--p4),var(--p1),var(--p2));color:#fff;font-weight:300;font-size:3rem}
@@ -130,6 +130,7 @@ pre{white-space:pre-wrap;background:#3a1019;border:1px solid var(--line);border-
       <input id="buscar" class="search" type="search" placeholder="Buscar artista o título">
       <div class="chips" id="filtros"></div>
       <div class="chips"><span id="cuenta"></span></div>
+      <div class="vitrina-tools"><button class="ghost mini" id="modoStock" aria-pressed="false">Vista horizontal</button></div>
       <div id="cards" class="cards"></div>
     </div>
     <div class="panel">
@@ -435,6 +436,14 @@ $("modoVidriera").onclick=()=>{
   $("modoVidriera").setAttribute("aria-pressed",String(horizontal));
 };
 
+// Vista independiente para Mi stock
+$("modoStock").onclick=()=>{
+  const horizontal=$("cards").classList.toggle("horizontal");
+  localStorage.setItem("spinStockHorizontal",String(horizontal));
+  $("modoStock").textContent=horizontal?"Vista vertical":"Vista horizontal";
+  $("modoStock").setAttribute("aria-pressed",String(horizontal));
+};
+
 // Mis discos
 async function cargarMisDiscos(){
   const {data,error}=await sb.from("discos").select("*").eq("vendedor_id",user.id).order("created_at",{ascending:false});
@@ -504,6 +513,10 @@ function autocompletar(){
 }
 function render(){
   sugerencias();renderFiltros();
+  const stockHorizontal=localStorage.getItem("spinStockHorizontal")==="true";
+  $("cards").classList.toggle("horizontal",stockHorizontal);
+  $("modoStock").textContent=stockHorizontal?"Vista vertical":"Vista horizontal";
+  $("modoStock").setAttribute("aria-pressed",String(stockHorizontal));
   const l=visibles(),cont=$("cards");cont.innerHTML="";
   if(!user) cont.innerHTML='<p class="empty">Ingresá desde Cuenta para ver tu stock.</p>';
   else if(!misDiscos.length) cont.innerHTML='<p class="empty">Todavía no cargaste discos. Andá a Cargar.</p>';
