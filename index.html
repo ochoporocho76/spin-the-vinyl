@@ -92,6 +92,19 @@ pre{white-space:pre-wrap;background:#3a1019;border:1px solid var(--line);border-
 
 <main>
   <section class="view on" id="v-explorar">
+    <div class="panel" id="panelMarketplace">
+      <h2>Buscar música física en Argentina</h2>
+      <input id="buscarPublico" class="search" type="search" placeholder="Buscar artista, título o vendedor">
+      <div class="grid">
+        <label>Formato
+          <select id="filtroFormato"><option value="">Todos los formatos</option><option>Vinilo LP</option><option>Vinilo single/EP</option><option>CD</option><option>Casete</option><option>DVD musical</option><option>Blu-ray musical</option><option>Box set</option><option>Otro formato físico</option></select>
+        </label>
+        <label>Provincia
+          <select id="filtroProvincia"><option value="">Todas las provincias</option><option>Buenos Aires</option><option>Ciudad Autónoma de Buenos Aires</option><option>Catamarca</option><option>Chaco</option><option>Chubut</option><option>Córdoba</option><option>Corrientes</option><option>Entre Ríos</option><option>Formosa</option><option>Jujuy</option><option>La Pampa</option><option>La Rioja</option><option>Mendoza</option><option>Misiones</option><option>Neuquén</option><option>Río Negro</option><option>Salta</option><option>San Juan</option><option>San Luis</option><option>Santa Cruz</option><option>Santa Fe</option><option>Santiago del Estero</option><option>Tierra del Fuego</option><option>Tucumán</option></select>
+        </label>
+      </div>
+      <div id="resultadosPublicos" class="cards"></div>
+    </div>
     <div class="panel" id="vitrinaVendedores">
       <h2>Vendedores</h2>
       <div id="listaVendedores"></div>
@@ -129,8 +142,18 @@ pre{white-space:pre-wrap;background:#3a1019;border:1px solid var(--line);border-
         <datalist id="artistas"></datalist>
         <datalist id="titulos"></datalist>
         <label>Año<input id="anio" type="number" placeholder="1973"></label>
-        <label>Precio (ARS)<input id="precio" type="number" placeholder="25000"></label>
-        <label>Estado
+        <label>Precio (ARS)<input id="precio" type="number" min="0" step="1" placeholder="25000"></label>
+        <label>Formato
+          <select id="formato"><option>Vinilo LP</option><option>Vinilo single/EP</option><option>CD</option><option>Casete</option><option>DVD musical</option><option>Blu-ray musical</option><option>Box set</option><option>Otro formato físico</option></select>
+        </label>
+        <label>Provincia
+          <select id="provincia"><option value="">Elegí una provincia</option><option>Buenos Aires</option><option>Ciudad Autónoma de Buenos Aires</option><option>Catamarca</option><option>Chaco</option><option>Chubut</option><option>Córdoba</option><option>Corrientes</option><option>Entre Ríos</option><option>Formosa</option><option>Jujuy</option><option>La Pampa</option><option>La Rioja</option><option>Mendoza</option><option>Misiones</option><option>Neuquén</option><option>Río Negro</option><option>Salta</option><option>San Juan</option><option>San Luis</option><option>Santa Cruz</option><option>Santa Fe</option><option>Santiago del Estero</option><option>Tierra del Fuego</option><option>Tucumán</option></select>
+        </label>
+        <label>Localidad<input id="localidad" placeholder="Ej.: Córdoba capital"></label>
+        <label>Disponibilidad
+          <select id="disponibilidad"><option value="Disponible">Disponible</option><option value="Reservado">Reservado</option><option value="Vendido">Vendido</option></select>
+        </label>
+        <label>Condición del ejemplar
           <select id="estado">
             <option value="M">M · Mint</option>
             <option value="NM">NM · Near Mint</option>
@@ -234,7 +257,8 @@ const APP_URL = "https://ochoporocho76.github.io/spin-the-vinyl/";
 const sb = supabase.createClient(SB_URL, SB_KEY);
 
 const ESTADOS={"M":{color:"#2ec4b6"},"NM":{color:"#7bd389"},"VG+":{color:"#ffd166"},"VG":{color:"#ff9f1c"},"G":{color:"#ff4d6d"}};
-let user=null, miNombre="", misDiscos=[], filtro=null, pendFoto="", pendAudio=null, registroVisible=false, deferred=null;
+const FORMATOS=["Vinilo LP","Vinilo single/EP","CD","Casete","DVD musical","Blu-ray musical","Box set","Otro formato físico"];
+let user=null, miNombre="", misDiscos=[], filtro=null, pendFoto="", pendAudio=null, registroVisible=false, deferred=null, discosPublicos=[], perfilesPublicos={};
 
 const $=id=>document.getElementById(id);
 const norm=s=>(s||"").trim().toLowerCase();
@@ -265,7 +289,7 @@ function traducir(m){
 function ver(n){
   document.querySelectorAll(".tab").forEach(b=>b.classList.toggle("on",b.dataset.v===n));
   document.querySelectorAll(".view").forEach(v=>v.classList.toggle("on",v.id==="v-"+n));
-  if(n==="explorar") cargarVendedores();
+  if(n==="explorar"){cargarMarketplace();cargarVendedores();}
   if(n==="consultas"){cargarConsultas();revisarAvisos();}
   if(n==="stock") render();
   if(n==="cargar") $("formCarga").hidden=!user, $("sinSesionCarga").hidden=!!user;
@@ -313,6 +337,35 @@ async function registrar(){
 async function salir(){ await sb.auth.signOut(); }
 sb.auth.onAuthStateChange(()=>{ setTimeout(()=>{ cargarSesion().then(revisarAvisos); },0); });
 setInterval(revisarAvisos,30000);
+
+// Mercado público: búsqueda general entre publicaciones de todos los vendedores
+async function cargarMarketplace(){
+  const cont=$("resultadosPublicos");
+  cont.innerHTML='<p class="empty">Cargando publicaciones...</p>';
+  const [{data:discos,error:e1},{data:perfiles,error:e2}]=await Promise.all([
+    sb.from("discos").select("* ").order("created_at",{ascending:false}).limit(500),
+    sb.from("perfiles").select("id,nombre_local")
+  ]);
+  if(e1||e2){cont.innerHTML='<p class="empty">No se pudieron cargar las publicaciones. Revisá la conexión e intentá nuevamente.</p>';return;}
+  discosPublicos=discos||[];
+  perfilesPublicos=Object.fromEntries((perfiles||[]).map(p=>[p.id,p.nombre_local]));
+  renderMarketplace();
+}
+function renderMarketplace(){
+  const cont=$("resultadosPublicos");
+  if(!cont)return;
+  const q=norm($("buscarPublico").value), formato=$("filtroFormato").value, provincia=$("filtroProvincia").value;
+  const resultados=discosPublicos.filter(d=>{
+    const texto=norm([d.artista,d.titulo,d.edicion,perfilesPublicos[d.vendedor_id],d.localidad,d.provincia,d.formato].join(" "));
+    return (!q||texto.includes(q))&&(!formato||(d.formato||"Vinilo LP")===formato)&&(!provincia||(d.provincia||"")===provincia)&&((d.disponibilidad||"Disponible")==="Disponible");
+  });
+  cont.innerHTML="";
+  if(!resultados.length){cont.innerHTML='<p class="empty">No encontramos publicaciones disponibles con esos filtros. Probá otra búsqueda.</p>';return;}
+  resultados.forEach(d=>cont.appendChild(tarjeta(d,false,true)));
+}
+$("buscarPublico").oninput=renderMarketplace;
+$("filtroFormato").onchange=renderMarketplace;
+$("filtroProvincia").onchange=renderMarketplace;
 
 // Explorar: vendedores y sus vidrieras
 async function cargarVendedores(){
@@ -371,15 +424,20 @@ function renderFiltros(){
     $("filtros").appendChild(b);
   });
 }
-function tarjeta(d,propia){
+function tarjeta(d,propia,publica=false){
   const c=document.createElement("article");c.className="card";c.dataset.disco=d.id;
   const cover=document.createElement("div");cover.className="cover";
   cover.innerHTML=`<span>${esc((d.artista[0]||"?").toUpperCase())}</span>`;
   if(d.foto_url){const i=document.createElement("img");i.alt="";i.loading="lazy";i.src=d.foto_url;i.onerror=()=>i.remove();cover.appendChild(i);}
   const body=document.createElement("div");body.className="body";
+  const ubicacion=[d.localidad,d.provincia].filter(Boolean).map(esc).join(", ");
+  const vendedor=perfilesPublicos[d.vendedor_id];
   body.innerHTML=`<div class="artist">${esc(d.artista)}</div>
     <div class="title">${esc(d.titulo)}${d.anio?" · "+esc(d.anio):""}${d.edicion?" · "+esc(d.edicion):""}</div>
-    <div class="meta"><span class="badge" style="background:${ESTADOS[d.estado]?.color||"#ccc"}">${esc(d.estado)}</span><span class="price">${fmt(d.precio)}</span></div>`;
+    <div class="title">${esc(d.formato||"Vinilo LP")} · Condición: ${esc(d.estado||"Sin indicar")}</div>
+    ${ubicacion?`<div class="title">📍 ${ubicacion}</div>`:""}
+    ${publica&&vendedor?`<div class="title">Vendedor: ${esc(vendedor)}</div>`:""}
+    <div class="meta"><span class="badge" style="background:${(d.disponibilidad||"Disponible")==="Disponible"?"#7bd389":(d.disponibilidad==="Reservado"?"#ffd166":"#ccc")}">${esc(d.disponibilidad||"Disponible")}</span><span class="price">${fmt(d.precio)}</span></div>`;
   if(d.audio_url){const a=document.createElement("audio");a.controls=true;a.preload="none";a.src=d.audio_url;body.appendChild(a);}
   if(propia){
     const del=document.createElement("button");del.className="mini ghost";del.textContent="Eliminar";
@@ -394,7 +452,7 @@ function tarjeta(d,propia){
     body.appendChild(del);
   }
   const etq=document.createElement("span");etq.className="etq";etq.textContent="Nuevo mensaje";etq.hidden=true;body.appendChild(etq);
-  if(!propia){
+  if(!propia&&(d.disponibilidad||"Disponible")==="Disponible"){
     const b=document.createElement("button");b.className="mini btn-consulta";b.textContent="Me interesa";
     b.onclick=()=>consultarDisco(d);
     body.appendChild(b);
@@ -423,7 +481,7 @@ function render(){
   else l.forEach(d=>cont.appendChild(tarjeta(d,true)));
   $("cuenta").textContent=`${l.length} de ${misDiscos.length} discos`;
   $("vidriera").textContent=misDiscos.length
-    ?`🎶 ${miNombre}\n\n`+misDiscos.map(d=>`• ${d.artista} - ${d.titulo}${d.anio?" ("+d.anio+")":""} | ${d.estado} | ${fmt(d.precio)}`).join("\n")+"\n\nConsultas por WhatsApp."
+    ?`🎶 ${miNombre}\n\n`+misDiscos.map(d=>`• ${d.artista} - ${d.titulo}${d.anio?" ("+d.anio+")":""} | ${d.formato||"Vinilo LP"} | ${d.estado} | ${fmt(d.precio)} | ${d.localidad||""}${d.provincia?", "+d.provincia:""}`).join("\n")+"\n\nConsultas por WhatsApp."
     :"Agregá discos para ver tu vidriera.";
   renderIndicadores();
 }
@@ -586,15 +644,17 @@ $("audioFile").onchange=e=>{
   pendAudio=f;$("audioNombre").textContent="✔ "+f.name;
 };
 function limpiarForm(){
-  ["artista","titulo","anio","precio","edicion"].forEach(i=>$(i).value="");
-  $("estado").value="VG+";$("fotoFile").value="";$("audioFile").value="";
+  ["artista","titulo","anio","precio","edicion","localidad"].forEach(i=>$(i).value="");
+  $("estado").value="VG+";$("formato").value="Vinilo LP";$("provincia").value="";$("disponibilidad").value="Disponible";$("fotoFile").value="";$("audioFile").value="";
   pendFoto="";pendAudio=null;
   $("fotoNombre").textContent="Sin archivo";$("audioNombre").textContent="Sin archivo";
 }
 async function publicarDisco(){
   if(!user) return aviso("Ingresá primero desde Cuenta.");
   const artista=$("artista").value.trim(),titulo=$("titulo").value.trim(),precio=parseFloat($("precio").value);
-  if(!artista||!titulo||isNaN(precio)) return aviso("Completá artista, título y precio.");
+  if(!artista||!titulo||isNaN(precio)||precio<0) return aviso("Completá artista, título y un precio válido.");
+  if(!$("provincia").value) return aviso("Elegí la provincia desde donde se ofrece el artículo.");
+  if(!$("localidad").value.trim()) return aviso("Completá la localidad desde donde se ofrece el artículo.");
   const id=crypto.randomUUID();
   let foto_url=null,audio_url=null;
   $("agregar").disabled=true;$("agregar").textContent="Publicando...";
@@ -616,7 +676,8 @@ async function publicarDisco(){
     const {error}=await sb.from("discos").insert({
       id,vendedor_id:user.id,artista,titulo,
       anio:$("anio").value.trim()||null,precio,estado:$("estado").value,
-      edicion:$("edicion").value.trim()||null,foto_url,audio_url
+      formato:$("formato").value,provincia:$("provincia").value||null,localidad:$("localidad").value.trim()||null,
+      disponibilidad:$("disponibilidad").value,edicion:$("edicion").value.trim()||null,foto_url,audio_url
     });
     if(error) throw error;
   }catch(e){
@@ -627,6 +688,7 @@ async function publicarDisco(){
   }
   limpiarForm();
   await cargarMisDiscos();
+  await cargarMarketplace();
   ver("stock");
 }
 $("agregar").onclick=publicarDisco;
@@ -659,6 +721,7 @@ $("instalar").onclick=async()=>{
 };
 
 if("serviceWorker" in navigator) navigator.serviceWorker.register("sw.js").catch(()=>{});
+cargarMarketplace();
 cargarVendedores();
 </script>
 </body>
