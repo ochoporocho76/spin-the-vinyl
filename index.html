@@ -355,6 +355,12 @@ function renderMarketplace(){
   const cont=$("resultadosPublicos");
   if(!cont)return;
   const q=norm($("buscarPublico").value), formato=$("filtroFormato").value, provincia=$("filtroProvincia").value;
+  // Al entrar en Explorar, mostrar primero los vendedores. Las publicaciones aparecen
+  // solo cuando la persona busca algo o aplica un filtro.
+  if(!q&&!formato&&!provincia){
+    cont.innerHTML='<p class="empty">Buscá por artista, título o vendedor, o elegí formato/provincia para ver publicaciones.</p>';
+    return;
+  }
   const resultados=discosPublicos.filter(d=>{
     const texto=norm([d.artista,d.titulo,d.edicion,perfilesPublicos[d.vendedor_id],d.localidad,d.provincia,d.formato].join(" "));
     return (!q||texto.includes(q))&&(!formato||(d.formato||"Vinilo LP")===formato)&&(!provincia||(d.provincia||"")===provincia)&&((d.disponibilidad||"Disponible")==="Disponible");
