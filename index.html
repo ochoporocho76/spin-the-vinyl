@@ -44,6 +44,14 @@ button.mini{padding:7px 12px;font-size:.75rem;border-radius:8px}
 .chip.off{opacity:.4}
 #cuenta{color:var(--muted);font-size:.8rem;margin-left:auto}
 .cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:14px}
+#cardsVidriera.horizontal{grid-template-columns:repeat(auto-fill,minmax(112px,1fr));gap:8px}
+#cardsVidriera.horizontal .cover{font-size:1.8rem}
+#cardsVidriera.horizontal .body{padding:8px;gap:4px}
+#cardsVidriera.horizontal .artist{font-size:.76rem}
+#cardsVidriera.horizontal .title{font-size:.68rem}
+#cardsVidriera.horizontal .price{font-size:.78rem}
+#cardsVidriera.horizontal button{padding:6px 8px;font-size:.68rem}
+.vitrina-tools{display:flex;gap:8px;align-items:center;justify-content:flex-end;flex-wrap:wrap;margin:10px 0}
 .card{background:#3a1019;border:1px solid var(--line);border-radius:var(--radius);overflow:hidden;display:flex;flex-direction:column}
 .cover{aspect-ratio:1/1;position:relative;display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,var(--p4),var(--p1),var(--p2));color:#fff;font-weight:300;font-size:3rem}
 .cover img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
@@ -112,6 +120,7 @@ pre{white-space:pre-wrap;background:#3a1019;border:1px solid var(--line);border-
     <div class="panel" id="vitrinaDetalle" hidden>
       <button class="ghost mini" id="volverExplorar">← Volver</button>
       <h2 id="tituloVidriera" style="margin-top:12px"></h2>
+      <div class="vitrina-tools"><button class="ghost mini" id="modoVidriera" aria-pressed="false">Vista horizontal</button></div>
       <div id="cardsVidriera" class="cards"></div>
     </div>
   </section>
@@ -184,6 +193,7 @@ pre{white-space:pre-wrap;background:#3a1019;border:1px solid var(--line);border-
   </section>
 
   <section class="view" id="v-consultas">
+    <div class="panel"><button class="ghost mini" id="activarAvisos">Activar avisos en este dispositivo</button><small style="display:block;color:var(--muted);margin-top:8px">Los avisos del navegador requieren permiso. Para avisos con la web cerrada o por WhatsApp hace falta configurar un servicio externo.</small></div>
     <div class="panel" id="listaConsultas"></div>
     <div class="panel" id="chatPanel" hidden>
       <button class="ghost mini" id="cerrarChat">← Volver</button>
@@ -337,6 +347,12 @@ async function registrar(){
 async function salir(){ await sb.auth.signOut(); }
 sb.auth.onAuthStateChange(()=>{ setTimeout(()=>{ cargarSesion().then(revisarAvisos); },0); });
 setInterval(revisarAvisos,30000);
+$("activarAvisos").onclick=async()=>{
+  if(!("Notification" in window)) return aviso("Este navegador no admite notificaciones.");
+  const permiso=await Notification.requestPermission();
+  if(permiso==="granted") aviso("Avisos activados en este dispositivo mientras Spin The Vinyl esté abierto.");
+  else aviso("No se habilitaron los avisos. Podés permitirlos desde la configuración del navegador.");
+};
 
 // Mercado público: búsqueda general entre publicaciones de todos los vendedores
 async function cargarMarketplace(){
@@ -395,6 +411,9 @@ async function cargarVendedores(){
   });
 }
 async function verVidriera(id,nombre){
+  $("cardsVidriera").classList.remove("horizontal");
+  $("modoVidriera").textContent="Vista horizontal";
+  $("modoVidriera").setAttribute("aria-pressed","false");
   $("vitrinaVendedores").hidden=true; $("vitrinaDetalle").hidden=false;
   $("tituloVidriera").textContent=nombre;
   const cont=$("cardsVidriera");
@@ -410,6 +429,11 @@ $("listaVendedores").onclick=e=>{
   if(b) verVidriera(b.dataset.id,b.dataset.nombre);
 };
 $("volverExplorar").onclick=cargarVendedores;
+$("modoVidriera").onclick=()=>{
+  const horizontal=$("cardsVidriera").classList.toggle("horizontal");
+  $("modoVidriera").textContent=horizontal?"Vista vertical":"Vista horizontal";
+  $("modoVidriera").setAttribute("aria-pressed",String(horizontal));
+};
 
 // Mis discos
 async function cargarMisDiscos(){
