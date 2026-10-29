@@ -46,3 +46,14 @@ self.addEventListener("notificationclick", event => {
     if (self.clients.openWindow) await self.clients.openWindow(target);
   })());
 });
+
+self.addEventListener("push", event => {
+  let data = {};
+  try { data = event.data ? event.data.json() : {}; } catch (_) { data = { body: event.data ? event.data.text() : "Tenés un mensaje nuevo." }; }
+  event.waitUntil(self.registration.showNotification(data.title || "Nuevo mensaje · Spin The Vinyl", {
+    body: data.body || "Tenés un mensaje nuevo.",
+    icon: "icon-192.png", badge: "icon-192.png",
+    tag: data.tag || "stv-mensaje",
+    data: { url: data.url || "./" }
+  }));
+});

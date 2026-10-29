@@ -265,6 +265,7 @@ pre{white-space:pre-wrap;background:#3a1019;border:1px solid var(--line);border-
 const SB_URL = "https://txrjvzamjapccrbhofam.supabase.co";
 const SB_KEY = "sb_publishable_jfJup65kWkFeDNaHX4TDkw_ErvYCztq";
 const APP_URL = "https://ochoporocho76.github.io/spin-the-vinyl/";
+const VAPID_PUBLIC_KEY = "BKC9lhZEZR3PJRcwm2n31ocq0L3f3D0kDC80BVxRHvhofmFDEJXkptUzSw-vlxvZ8_cT2-THoR_tMIf2pbIgKhM";
 const sb = supabase.createClient(SB_URL, SB_KEY);
 
 const ESTADOS={"M":{color:"#2ec4b6"},"NM":{color:"#7bd389"},"VG+":{color:"#ffd166"},"VG":{color:"#ff9f1c"},"G":{color:"#ff4d6d"}};
@@ -370,12 +371,30 @@ function escucharMensajesEnVivo(){
 }
 sb.auth.onAuthStateChange(()=>{ setTimeout(()=>{ cargarSesion().then(()=>{revisarAvisos();escucharMensajesEnVivo();}); },0); });
 setInterval(revisarAvisos,30000);
-$("activarAvisos").onclick=async()=>{
-  if(!("Notification" in window)) return aviso("Este navegador no admite notificaciones.");
+function claveVapidBytes(base64String){
+  const padding="=".repeat((4-base64String.length%4)%4);
+  const base64=(base64String+padding).replace(/-/g,"+").replace(/_/g,"/");
+  const raw=atob(base64); return Uint8Array.from([...raw].map(c=>c.charCodeAt(0)));
+}
+async function activarPush(){
+  if(!user) return aviso("Ingresá a tu cuenta antes de activar los avisos.");
+  if(!("Notification" in window)||!("serviceWorker" in navigator)||!("PushManager" in window)) return aviso("Este navegador no admite notificaciones push. Probá desde Chrome en Android o desde un navegador compatible.");
   const permiso=await Notification.requestPermission();
-  if(permiso==="granted") aviso("Avisos activados. Recibirás alertas mientras la app esté abierta; para recibirlas cerrada falta configurar el envío push del servidor.");
-  else aviso("No se habilitaron los avisos. Podés permitirlos desde la configuración del navegador.");
-};
+  if(permiso!=="granted") return aviso("No se habilitaron los avisos. Permitilos desde la configuración del navegador.");
+  try{
+    const reg=await navigator.serviceWorker.register("sw.js");
+    await navigator.serviceWorker.ready;
+    let sub=await reg.pushManager.getSubscription();
+    if(!sub) sub=await reg.pushManager.subscribe({userVisibleOnly:true,applicationServerKey:claveVapidBytes(VAPID_PUBLIC_KEY)});
+    const {error}=await sb.from("push_subscriptions").upsert({user_id:user.id,endpoint:sub.endpoint,subscription:sub.toJSON()},{onConflict:"endpoint"});
+    if(error) throw error;
+    aviso("¡Avisos push activados en este dispositivo! Para que lleguen con la web cerrada, la función send-push debe estar desplegada y conectada.");
+  }catch(e){console.error(e);aviso("No se pudieron registrar los avisos: "+(e.message||"revisá permisos y conexión"));}
+}
+async function avisarPush(consultaId){
+  try{const {error}=await sb.functions.invoke("send-push",{body:{consulta_id:consultaId}});if(error) console.warn("Push no enviado",error.message);}catch(e){console.warn("Push no enviado",e);}
+}
+$("activarAvisos").onclick=activarPush;
 
 // Mercado público: búsqueda general entre publicaciones de todos los vendedores
 async function cargarMarketplace(){
@@ -657,6 +676,7 @@ async function enviarMensaje(){
   $("nuevoMensaje").value="";
   await pintarMensajes();
   await revisarAvisos();
+  await avisarPush(consultaActiva.id);
 }
 function conLinks(t){
   return esc(t).replace(/https?:\/\/[^\s]+/g,u=>`<a href="${u}" target="_blank" rel="noopener" style="color:inherit;text-decoration:underline">${u}</a>`);
@@ -672,6 +692,7 @@ async function compartirWa(){
   if(error) return aviso("No se pudo compartir el WhatsApp.");
   $("miWa").value="";
   await pintarMensajes();
+  await avisarPush(consultaActiva.id);
 }
 $("compartirWa").onclick=compartirWa;
 $("enviarMensaje").onclick=enviarMensaje;
