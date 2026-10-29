@@ -1,4 +1,4 @@
-const CACHE = "spin-the-vinyl-v15";
+const CACHE = "spin-the-vinyl-v16";
 const SHELL = ["./", "./index.html", "./manifest.json", "./icon-192.png", "./icon-512.png"];
 
 self.addEventListener("install", e => {

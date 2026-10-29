@@ -386,7 +386,7 @@ async function activarPush(){
     await navigator.serviceWorker.ready;
     let sub=await reg.pushManager.getSubscription();
     if(!sub) sub=await reg.pushManager.subscribe({userVisibleOnly:true,applicationServerKey:claveVapidBytes(VAPID_PUBLIC_KEY)});
-    const {error}=await sb.from("push_subscriptions").upsert({user_id:user.id,endpoint:sub.endpoint,subscription:sub.toJSON()},{onConflict:"endpoint"});
+    const {error}=await sb.rpc("registrar_push",{p_endpoint:sub.endpoint,p_subscription:sub.toJSON()});
     if(error) throw error;
     aviso("¡Avisos push activados en este dispositivo! Para que lleguen con la web cerrada, la función send-push debe estar desplegada y conectada.");
   }catch(e){console.error(e);aviso("No se pudieron registrar los avisos: "+(e.message||"revisá permisos y conexión"));}
